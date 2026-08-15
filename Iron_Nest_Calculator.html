@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IRON NEST Heavy Turret Calculator</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0f14;
+    --panel: #121923;
+    --panel2: #17212e;
+    --border: #2b3a4d;
+    --text: #eef4fb;
+    --muted: #9fb0c3;
+    --accent: #73d6ff;
+    --good: #83e6a2;
+    --warn: #ffd479;
+    --bad: #ff8b8b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: radial-gradient(circle at top, #172231 0, var(--bg) 45%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .wrap {
+    width: min(1500px, calc(100% - 32px));
+    margin: 24px auto;
+  }
+  h1 { margin: 0 0 4px; font-size: clamp(20px, 2.6vw, 30px); }
+  .subtitle { color: var(--muted); margin-bottom: 16px; font-size: 13px; }
+  .panel {
+    background: rgba(18,25,35,.96);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.28);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 7px;
+    font-weight: 600;
+  }
+  input, select, button {
+    font: inherit;
+  }
+  input, select {
+    width: 100%;
+    background: #0d141d;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    outline: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+
+
+  .charge-lock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .charge-lock input {
+    width: auto;
+    accent-color: var(--accent);
+  }
+  .charge-lock b {
+    color: var(--text);
+  }
+  select:disabled {
+    opacity: .68;
+    cursor: not-allowed;
+  }
+
+  .time-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+  }
+  .time-part {
+    position: relative;
+  }
+  .time-part input {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 9px 8px 23px;
+    font-variant-numeric: tabular-nums;
+  }
+  .time-part span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    pointer-events: none;
+  }
+  .time-separator {
+    color: var(--muted);
+    font-size: 25px;
+    font-weight: 700;
+    transform: translateY(-5px);
+  }
+  .hint {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .options {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 16px 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .options input { width: auto; }
+  .actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  button {
+    border: 0;
+    border-radius: 10px;
+    padding: 11px 16px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  #calculate {
+    background: var(--accent);
+    color: #061018;
+  }
+  #example {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .error {
+    color: var(--bad);
+    margin-top: 14px;
+    min-height: 20px;
+  }
+  .results {
+    display: grid;
+    grid-template-columns: minmax(62px, .65fr) minmax(82px, 1fr) minmax(82px, 1fr) minmax(82px, .9fr) minmax(150px, 1.55fr);
+    gap: 7px;
+    margin-top: 16px;
+  }
+  @media (max-width: 620px) {
+    .results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .result {
+    min-width: 0;
+    background: #0d141d;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 10px 8px;
+  }
+  .result .k {
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .25px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+  }
+  .result .v {
+    font-size: clamp(16px, 1.7vw, 24px);
+    font-weight: 800;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    font-variant-numeric: tabular-nums;
+  }
+  .result.fire .v { color: var(--good); }
+
+  .result.fire .v {
+    font-size: clamp(15px, 1.45vw, 21px);
+    overflow: visible;
+    text-overflow: unset;
+    letter-spacing: -.2px;
+  }
+
+  .source {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #101822;
+    color: var(--muted);
+    line-height: 1.45;
+    font-size: 13px;
+  }
+  .source.warn {
+    color: var(--warn);
+    border: 1px solid #5a4a28;
+  }
+  details {
+    margin-top: 18px;
+    color: var(--muted);
+  }
+  summary { cursor: pointer; color: var(--text); font-weight: 600; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  th, td {
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+  }
+  th:first-child, td:first-child { text-align: left; }
+
+
+
+  .calculator-pane .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .impact-time-block {
+    grid-column: 1 / -1;
+    background: #0d141d;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .impact-time-block > label {
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  .impact-time-groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr);
+    gap: 10px;
+    align-items: end;
+  }
+  .impact-group-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    margin-bottom: 6px;
+  }
+  .impact-plus {
+    align-self: center;
+    text-align: center;
+    color: var(--accent);
+    font-size: 25px;
+    font-weight: 800;
+    transform: translateY(8px);
+  }
+  .impact-time-block .time-part input {
+    font-size: 24px;
+    min-height: 62px;
+    padding: 10px 8px 24px;
+  }
+  .impact-effective {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .impact-effective b {
+    color: var(--good);
+    font-size: 15px;
+    margin-left: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 620px) {
+    .calculator-pane .grid {
+      grid-template-columns: 1fr;
+    }
+    .impact-time-block {
+      grid-column: auto;
+    }
+    .impact-time-groups {
+      grid-template-columns: 1fr;
+    }
+    .impact-plus {
+      transform: none;
+      line-height: 1;
+    }
+  }
+
+  .split-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .calculator-pane,
+  .history-pane {
+    min-width: 0;
+  }
+  .history-pane {
+    border-left: 1px solid var(--border);
+    padding-left: 16px;
+  }
+  .history-pane .history-section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .history-pane .history-list {
+    gap: 6px;
+  }
+  .history-pane .history-item {
+    grid-template-columns:
+      minmax(78px, 1.18fr)
+      minmax(54px, .72fr)
+      minmax(54px, .72fr)
+      minmax(40px, .48fr)
+      minmax(58px, .72fr)
+      minmax(52px, .66fr)
+      minmax(82px, 1fr)
+      30px;
+    gap: 5px;
+    padding: 8px 9px;
+  }
+  .history-pane .history-cell {
+    min-width: 0;
+    font-size: 9px;
+    line-height: 1.1;
+  }
+  .history-pane .history-cell > span:first-child {
+    display: block;
+    min-height: 11px;
+    white-space: nowrap;
+  }
+  .history-pane .history-cell b {
+    display: block;
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+  .history-pane .history-name {
+    font-size: 12px;
+  }
+  .history-pane .history-delete {
+    width: 28px;
+    height: 28px;
+    align-self: center;
+  }
+  .history-pane .history-header {
+    margin-bottom: 10px;
+  }
+  .history-pane .history-header h2 {
+    font-size: 17px;
+  }
+  .history-pane .history-subtitle {
+    font-size: 11px;
+  }
+  .calculator-pane .footer {
+    margin-top: 12px;
+  }
+
+  @media (max-width: 980px) {
+    .split-layout {
+      grid-template-columns: 1fr;
+    }
+    .history-pane {
+      border-left: 0;
+      border-top: 1px solid var(--border);
+      padding-left: 0;
+      padding-top: 18px;
+    }
+  }
+
+
+  .direction-icon {
+    color: var(--accent);
+    font-weight: 900;
+    line-height: 1;
+    user-select: none;
+  }
+  .bearing-kpi .horizontal-arrow {
+    margin-top: 3px;
+    font-size: 17px;
+    text-align: left;
+  }
+  .elevation-value-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+  .elevation-kpi .vertical-arrow {
+    font-size: 17px;
+    flex: 0 0 auto;
+  }
+  .history-bearing-value,
+  .history-elevation-value {
+    margin-top: 2px;
+    min-height: 28px;
+  }
+  .history-bearing-value {
+    display: grid;
+    grid-template-rows: auto 10px;
+    align-content: start;
+    justify-items: start;
+  }
+  .history-elevation-value {
+    display: flex;
+    align-items: flex-start;
+    gap: 3px;
+  }
+  .history-bearing-value b,
+  .history-elevation-value b {
+    margin-top: 0;
+    line-height: 16px;
+  }
+  .history-direction-icon {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 10px;
+  }
+  .history-bearing-value .history-direction-icon {
+    display: block;
+    margin-top: -1px;
+  }
+  .history-elevation-value .history-direction-icon {
+    margin-top: 2px;
+  }
+
+  .history-section {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .history-header h2 {
+    margin: 0 0 3px;
+    font-size: 18px;
+  }
+  .history-subtitle {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .clear-history {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+  .clear-history:hover {
+    color: var(--text);
+    border-color: #52657b;
+  }
+  .history-empty {
+    color: var(--muted);
+    padding: 14px 0 2px;
+    font-size: 13px;
+  }
+  .history-list {
+    display: grid;
+    gap: 8px;
+  }
+  .history-item {
+    display: grid;
+    grid-template-columns: minmax(120px, 1.4fr) repeat(6, minmax(76px, 1fr)) 38px;
+    gap: 8px;
+    align-items: start;
+    background: #0d141d;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .history-name {
+    font-weight: 700;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .history-cell {
+    color: var(--muted);
+  }
+  .history-cell b {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .history-delete {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: end;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid transparent;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .history-delete:hover {
+    color: var(--bad);
+    border-color: rgba(255,139,139,.45);
+    background: rgba(255,139,139,.08);
+  }
+  .history-delete:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 700px) {
+    .history-item {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .history-name {
+      grid-column: 1 / -2;
+    }
+    .history-delete {
+      grid-column: -2 / -1;
+      grid-row: 1;
+    }
+  }
+  @media (max-width: 520px) {
+    .history-header {
+      align-items: flex-start;
+    }
+    .history-item {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .footer {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>IRON NEST: Heavy Turret Calculator</h1>
+  <div class="subtitle">Elevation • charge • flight time • fire timestamp</div>
+
+  <div class="panel">
+
+    <div class="split-layout">
+      <section class="calculator-pane">
+        <div class="grid">
+          <div>
+            <label for="targetName">Target name</label>
+            <input id="targetName" type="text" maxlength="40" placeholder="e.g. North bunker">
+            <div class="hint">Optional. Saved with calculation history.</div>
+          </div>
+
+          <div>
+            <label for="distance">Distance (km)</label>
+            <input id="distance" type="number" min="0.01" max="30" step="0.01" placeholder="Enter distance (km)">
+            <div class="hint">Maximum supported range: 30 km.</div>
+          </div>
+
+          <div>
+            <label for="bearing">Bearing (optional)</label>
+            <input id="bearing" type="number" min="0" max="359.9" step="0.1" placeholder="0.0–359.9">
+            <div class="hint">Optional target bearing in degrees.</div>
+          </div>
+
+          <div>
+            <label for="charge">Charge</label>
+            <select id="charge">
+              <option value="auto">Auto — minimum charge that reaches target</option>
+              <option value="1">1 charge — max 5 km</option>
+              <option value="2">2 charges — max 10 km</option>
+              <option value="3">3 charges — max 15 km</option>
+              <option value="4">4 charges — max 20 km</option>
+              <option value="5">5 charges — max 25 km</option>
+              <option value="6">6 charges — max 30 km</option>
+            </select>
+            <label class="charge-lock">
+              <input id="lockCharge6" type="checkbox">
+              <span>Lock charge to <b>6</b> (MAX)</span>
+            </label>
+            <div class="hint">When locked, charge stays at 6 and the selector is disabled.</div>
+          </div>
+
+          <div class="impact-time-block">
+            <label>Desired impact time</label>
+
+            <div class="impact-time-groups">
+              <div>
+                <div class="impact-group-label">BASE IMPACT TIME</div>
+                <div class="time-input">
+                  <div class="time-part">
+                    <input id="impactHour" type="number" min="0" max="23" step="1" value="12" inputmode="numeric" aria-label="Impact hour">
+                    <span>HR</span>
+                  </div>
+                  <div class="time-separator">:</div>
+                  <div class="time-part">
+                    <input id="impactMinute" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="Impact minute">
+                    <span>MIN</span>
+                  </div>
+                  <div class="time-separator">:</div>
+                  <div class="time-part">
+                    <input id="impactSecond" type="number" min="0" max="59.99" step="0.01" value="0" inputmode="decimal" aria-label="Impact second">
+                    <span>SEC</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="impact-plus">+</div>
+
+              <div>
+                <div class="impact-group-label">ADD TIME</div>
+                <div class="time-input">
+                  <div class="time-part">
+                    <input id="addHour" type="number" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="Added hours">
+                    <span>HR</span>
+                  </div>
+                  <div class="time-separator">:</div>
+                  <div class="time-part">
+                    <input id="addMinute" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="Added minutes">
+                    <span>MIN</span>
+                  </div>
+                  <div class="time-separator">:</div>
+                  <div class="time-part">
+                    <input id="addSecond" type="number" min="0" max="59.99" step="0.01" value="0" inputmode="decimal" aria-label="Added seconds">
+                    <span>SEC</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="impact-effective">
+              Effective impact time:
+              <b id="effectiveImpact">12:00:00.00</b>
+            </div>
+            <div class="hint">Added time is treated as a duration and is added to the base impact time.</div>
+          </div>
+        </div>
+
+        <label class="options">
+          <input id="extrapolate" type="checkbox">
+          Estimate flight time outside the supplied chart by extending the nearest 1 km interval.
+        </label>
+
+        <div class="actions">
+          <button id="calculate">Calculate</button>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <div class="results">
+          <div class="result">
+            <div class="k">CHARGE</div>
+            <div id="outCharge" class="v">—</div>
+          </div>
+
+          <div class="result bearing-kpi">
+            <div class="k">BEARING</div>
+            <div id="outBearing" class="v">—</div>
+            <div class="direction-icon horizontal-arrow" title="Horizontal / bearing">↔</div>
+          </div>
+
+          <div class="result elevation-kpi">
+            <div class="k">ELEVATION</div>
+            <div class="elevation-value-row">
+              <div id="outAngle" class="v">—</div>
+              <div class="direction-icon vertical-arrow" title="Vertical / elevation">↕</div>
+            </div>
+          </div>
+
+          <div class="result">
+            <div class="k">FLIGHT TIME</div>
+            <div id="outFlight" class="v">—</div>
+          </div>
+
+          <div class="result fire">
+            <div class="k">FIRE AT</div>
+            <div id="outFire" class="v">—</div>
+          </div>
+        </div>
+
+        <div id="source" class="source">Enter values and press Calculate.</div>
+
+        <details>
+          <summary>Show transcribed flight-time chart</summary>
+          <div style="overflow-x:auto">
+            <table id="flightTable"></table>
+          </div>
+        </details>
+
+        <div class="footer">
+          Elevation formula: <b>angle = distance × 12 ÷ charge</b>. Auto charge uses
+          <b>ceil(distance ÷ 5)</b>. Between chart distances, flight time is linearly interpolated.
+          The uploaded chart only contains flight-time values through 20 km, so 20–30 km estimates are
+          clearly marked as extrapolated.
+        </div>
+      </section>
+
+      <aside class="history-pane">
+        <div class="history-section">
+          <div class="history-header">
+            <div>
+              <h2>Recent calculations</h2>
+              <div class="history-subtitle">Last 10 calculations are kept in this browser.</div>
+            </div>
+            <button id="clearHistory" type="button" class="clear-history">Clear history</button>
+          </div>
+          <div id="historyEmpty" class="history-empty">No calculations yet.</div>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const FLIGHT = {
+  1: {3:14, 4:19, 5:23},
+  2: {3:11, 4:15, 5:19, 6:23, 7:26.5, 8:30, 9:34, 10:38},
+  3: {3:7, 4:10, 5:13, 6:15, 7:18, 8:20, 9:22.5, 10:26, 11:28, 12:31, 13:34, 14:36.5, 15:39},
+  4: {3:5, 4:7, 5:9, 6:11, 7:13, 8:15, 9:17, 10:18.5, 11:20, 12:22, 13:24, 14:26, 15:28, 16:30, 17:32, 18:34, 19:35.5, 20:37},
+  5: {3:4, 4:5.5, 5:7, 6:9, 7:11, 8:12.5, 9:13.5, 10:15, 11:16, 12:18, 13:20, 14:21, 15:23, 16:24, 17:26, 18:27, 19:29, 20:30},
+  6: {3:4, 4:5, 5:7, 6:8, 7:10, 8:11, 9:12, 10:14, 11:15, 12:17, 13:18, 14:20, 15:21, 16:22, 17:24, 18:26, 19:27, 20:28}
+};
+
+
+let chargeBeforeLock = "auto";
+
+function setChargeLock(locked) {
+  const chargeSelect = document.getElementById("charge");
+  const lockBox = document.getElementById("lockCharge6");
+
+  if (locked) {
+    if (!chargeSelect.disabled) {
+      chargeBeforeLock = chargeSelect.value;
+    }
+    chargeSelect.value = "6";
+    chargeSelect.disabled = true;
+    lockBox.checked = true;
+  } else {
+    chargeSelect.disabled = false;
+    chargeSelect.value = chargeBeforeLock;
+    lockBox.checked = false;
+  }
+}
+
+function chooseCharge(distance, selected) {
+  if (selected !== "auto") return Number(selected);
+  return Math.max(1, Math.min(6, Math.ceil(distance / 5)));
+}
+
+function interpolateFlight(charge, distance, allowExtrapolation) {
+  const data = FLIGHT[charge];
+  const xs = Object.keys(data).map(Number).sort((a,b) => a-b);
+
+  for (const x of xs) {
+    if (Math.abs(distance - x) < 1e-9) {
+      return {
+        seconds: data[x],
+        mode: "exact",
+        note: `Exact chart value: charge ${charge}, ${x} km = ${data[x]} s.`
+      };
+    }
+  }
+
+  for (let i = 0; i < xs.length - 1; i++) {
+    const x1 = xs[i], x2 = xs[i+1];
+    if (distance > x1 && distance < x2) {
+      const y1 = data[x1], y2 = data[x2];
+      const y = y1 + (distance - x1) * (y2 - y1) / (x2 - x1);
+      return {
+        seconds: y,
+        mode: "interpolated",
+        note: `Interpolated between ${x1} km (${y1} s) and ${x2} km (${y2} s).`
+      };
+    }
+  }
+
+  if (!allowExtrapolation) {
+    throw new Error(`No flight-time chart value covers ${distance} km with charge ${charge}. Enable estimation to extrapolate.`);
+  }
+
+  let x1, x2;
+  if (distance < xs[0]) {
+    x1 = xs[0];
+    x2 = xs[1];
+  } else {
+    x1 = xs[xs.length - 2];
+    x2 = xs[xs.length - 1];
+  }
+  const y1 = data[x1], y2 = data[x2];
+  const y = y1 + (distance - x1) * (y2 - y1) / (x2 - x1);
+
+  if (y < 0) throw new Error("Extrapolated flight time became negative; no usable chart data for this distance.");
+
+  return {
+    seconds: y,
+    mode: "extrapolated",
+    note: `ESTIMATE: extrapolated from ${x1} km (${y1} s) → ${x2} km (${y2} s). This value is not present in the supplied chart.`
+  };
+}
+
+function parseAddedTime() {
+  const hour = Number(document.getElementById("addHour").value);
+  const minute = Number(document.getElementById("addMinute").value);
+  const second = Number(document.getElementById("addSecond").value);
+
+  if (!Number.isInteger(hour) || hour < 0 || hour > 99) {
+    throw new Error("Added hours must be a whole number from 0 to 99.");
+  }
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) {
+    throw new Error("Added minutes must be a whole number from 0 to 59.");
+  }
+  if (!Number.isFinite(second) || second < 0 || second >= 60) {
+    throw new Error("Added seconds must be from 0 up to (but not including) 60.");
+  }
+
+  return hour * 3600 + minute * 60 + second;
+}
+
+function parseImpactTime() {
+  const baseTime = parseTimeParts(
+    "impactHour",
+    "impactMinute",
+    "impactSecond",
+    "Impact time"
+  );
+  return baseTime + parseAddedTime();
+}
+
+function updateEffectiveImpactPreview() {
+  const output = document.getElementById("effectiveImpact");
+  try {
+    output.textContent = formatClock(parseImpactTime());
+  } catch {
+    output.textContent = "—";
+  }
+}
+
+function formatClock(totalSeconds) {
+  const day = 86400;
+  let x = ((totalSeconds % day) + day) % day;
+  let h = Math.floor(x / 3600);
+  x -= h * 3600;
+  let m = Math.floor(x / 60);
+  let s = x - m * 60;
+
+  // Round to hundredths and carry correctly.
+  s = Math.round(s * 100) / 100;
+  if (s >= 60) { s -= 60; m += 1; }
+  if (m >= 60) { m -= 60; h = (h + 1) % 24; }
+
+  const hh = String(h).padStart(2, "0");
+  const mm = String(m).padStart(2, "0");
+  const ss = s.toFixed(2).padStart(5, "0");
+  return `${hh}:${mm}:${ss}`;
+}
+
+function fmt(n, digits=2) {
+  return Number(n).toFixed(digits).replace(/\.?0+$/, "");
+}
+
+
+
+function parseTimeParts(hourId, minuteId, secondId, label) {
+  const hour = Number(document.getElementById(hourId).value);
+  const minute = Number(document.getElementById(minuteId).value);
+  const second = Number(document.getElementById(secondId).value);
+
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+    throw new Error(`${label} hour must be a whole number from 0 to 23.`);
+  }
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) {
+    throw new Error(`${label} minute must be a whole number from 0 to 59.`);
+  }
+  if (!Number.isFinite(second) || second < 0 || second >= 60) {
+    throw new Error(`${label} second must be from 0 up to (but not including) 60.`);
+  }
+
+  return hour * 3600 + minute * 60 + second;
+}
+
+const HISTORY_KEY = "ironNestTurretHistoryV1";
+
+function loadHistory() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(items) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 10)));
+  } catch {
+    // If browser storage is unavailable, the calculator itself still works.
+  }
+}
+
+function addHistory(entry) {
+  const items = loadHistory();
+  items.unshift(entry);
+  saveHistory(items.slice(0, 10));
+  renderHistory();
+}
+
+function deleteHistory(index) {
+  const items = loadHistory();
+  if (index < 0 || index >= items.length) return;
+  items.splice(index, 1);
+  saveHistory(items);
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById("historyList");
+  const empty = document.getElementById("historyEmpty");
+  const items = loadHistory();
+
+  list.innerHTML = "";
+  empty.style.display = items.length ? "none" : "block";
+
+  items.forEach((item, index) => {
+    const row = document.createElement("div");
+    row.className = "history-item";
+
+    const name = document.createElement("div");
+    name.className = "history-name";
+    name.textContent = item.name || "Unnamed target";
+    row.appendChild(name);
+
+    const cells = [
+      ["Distance", `${item.distance} km`],
+      ["Bearing", item.bearing ? `${item.bearing}°` : "—"],
+      ["Charge", item.charge],
+      ["Elevation", `${item.angle}°`],
+      ["Flight", `${item.flight}s`],
+      ["Fire at", item.fireAt]
+    ];
+
+    for (const [label, value] of cells) {
+      const cell = document.createElement("div");
+      cell.className = "history-cell";
+
+      const labelEl = document.createElement("span");
+      labelEl.textContent = label;
+      cell.appendChild(labelEl);
+
+      if (label === "Bearing") {
+        const wrap = document.createElement("div");
+        wrap.className = "history-bearing-value";
+
+        const valueEl = document.createElement("b");
+        valueEl.textContent = value;
+
+        const icon = document.createElement("span");
+        icon.className = "history-direction-icon";
+        icon.textContent = "↔";
+        icon.title = "Horizontal / bearing";
+
+        wrap.appendChild(valueEl);
+        wrap.appendChild(icon);
+        cell.appendChild(wrap);
+      } else if (label === "Elevation") {
+        const wrap = document.createElement("div");
+        wrap.className = "history-elevation-value";
+
+        const valueEl = document.createElement("b");
+        valueEl.textContent = value;
+
+        const icon = document.createElement("span");
+        icon.className = "history-direction-icon";
+        icon.textContent = "↕";
+        icon.title = "Vertical / elevation";
+
+        wrap.appendChild(valueEl);
+        wrap.appendChild(icon);
+        cell.appendChild(wrap);
+      } else {
+        const valueEl = document.createElement("b");
+        valueEl.textContent = value;
+        cell.appendChild(valueEl);
+      }
+
+      row.appendChild(cell);
+    }
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "history-delete";
+    deleteButton.setAttribute("aria-label", `Delete history for ${item.name || "unnamed target"}`);
+    deleteButton.title = "Delete this calculation";
+    deleteButton.textContent = "×";
+    deleteButton.addEventListener("click", () => deleteHistory(index));
+    row.appendChild(deleteButton);
+
+    list.appendChild(row);
+  });
+}
+
+function calculate() {
+  const error = document.getElementById("error");
+  const source = document.getElementById("source");
+  error.textContent = "";
+
+  try {
+    const targetName = document.getElementById("targetName").value.trim();
+    const distance = Number(document.getElementById("distance").value);
+    if (!Number.isFinite(distance) || distance <= 0 || distance > 30) {
+      throw new Error("Distance must be greater than 0 km and no more than 30 km.");
+    }
+
+    const bearingText = document.getElementById("bearing").value.trim();
+    let bearing = null;
+    if (bearingText !== "") {
+      bearing = Number(bearingText);
+      if (!Number.isFinite(bearing) || bearing < 0 || bearing > 359.9) {
+        throw new Error("Bearing must be between 0.0° and 359.9°.");
+      }
+      bearing = Math.round(bearing * 10) / 10;
+    }
+
+    const selected = document.getElementById("lockCharge6").checked
+      ? "6"
+      : document.getElementById("charge").value;
+    const charge = chooseCharge(distance, selected);
+    const maxRange = charge * 5;
+
+    if (distance > maxRange + 1e-9) {
+      throw new Error(`Charge ${charge} can only reach ${maxRange} km. Use a higher charge or Auto.`);
+    }
+
+    const angle = distance * 12 / charge;
+    const flight = interpolateFlight(
+      charge,
+      distance,
+      document.getElementById("extrapolate").checked
+    );
+
+    const impactSeconds = parseImpactTime();
+    const fireSeconds = impactSeconds - flight.seconds;
+
+    document.getElementById("outCharge").textContent = `${charge}`;
+    document.getElementById("outBearing").textContent = bearing == null ? "—" : `${bearing.toFixed(1)}°`;
+    document.getElementById("outAngle").textContent = `${fmt(angle, 2)}°`;
+    document.getElementById("outFlight").textContent = `${fmt(flight.seconds, 2)} s`;
+    document.getElementById("outFire").textContent = formatClock(fireSeconds);
+
+    const effectiveImpactText = formatClock(impactSeconds);
+    source.textContent = `Effective impact: ${effectiveImpactText}. ${flight.note}`;
+    source.className = "source" + (flight.mode === "extrapolated" ? " warn" : "");
+
+    addHistory({
+      name: targetName,
+      distance: fmt(distance, 2),
+      bearing: bearing == null ? "" : bearing.toFixed(1),
+      charge: String(charge),
+      angle: fmt(angle, 2),
+      flight: fmt(flight.seconds, 2),
+      fireAt: formatClock(fireSeconds)
+    });
+  } catch (e) {
+    document.getElementById("outCharge").textContent = "—";
+    document.getElementById("outBearing").textContent = "—";
+    document.getElementById("outAngle").textContent = "—";
+    document.getElementById("outFlight").textContent = "—";
+    document.getElementById("outFire").textContent = "—";
+    source.textContent = "No result.";
+    source.className = "source";
+    error.textContent = e.message || String(e);
+  }
+}
+
+function buildTable() {
+  const table = document.getElementById("flightTable");
+  let html = "<thead><tr><th>Distance</th>";
+  for (let c=1; c<=6; c++) html += `<th>C${c}</th>`;
+  html += "</tr></thead><tbody>";
+
+  for (let d=3; d<=20; d++) {
+    html += `<tr><td>${d} km</td>`;
+    for (let c=1; c<=6; c++) {
+      html += `<td>${FLIGHT[c][d] == null ? "—" : FLIGHT[c][d] + " s"}</td>`;
+    }
+    html += "</tr>";
+  }
+  html += "</tbody>";
+  table.innerHTML = html;
+}
+
+document.getElementById("calculate").addEventListener("click", calculate);
+
+[
+  "impactHour", "impactMinute", "impactSecond",
+  "addHour", "addMinute", "addSecond"
+].forEach(id => {
+  document.getElementById(id).addEventListener("input", updateEffectiveImpactPreview);
+});
+
+
+document.getElementById("lockCharge6").addEventListener("change", (e) => {
+  setChargeLock(e.target.checked);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter") calculate();
+});
+
+document.getElementById("clearHistory").addEventListener("click", () => {
+  try {
+    localStorage.removeItem(HISTORY_KEY);
+  } catch {}
+  renderHistory();
+});
+
+buildTable();
+renderHistory();
+updateEffectiveImpactPreview();
+</script>
+</body>
+</html>
